@@ -2,7 +2,7 @@
 """
 Created on Fri Mar 17 09:26:00 2017
 
-@author: rothhr
+@author: rothhr, c.wang
 
 ###################################
 Usage examples:
@@ -16,8 +16,6 @@ I, hdr = mori.read_mori(filename,dtype) # dtype should be ">u1" (uint8), ">u2" (
 # write raw image
 mori.write_mori(I,spacing,filname,use_gzip=True)
 """
-
-
 
 import os
 import numpy as np
