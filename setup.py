@@ -9,6 +9,6 @@ setup(name='utils_cw',
       license='MIT',
       packages=['utils_cw'],
       install_requires=[
-          'numpy', 'click', 'json', 'termcolor', 'gzip', 'nibabel'
+          'numpy', 'click', 'termcolor', 'nibabel'
       ],
       zip_safe=False)

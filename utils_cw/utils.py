@@ -2,6 +2,9 @@ import os
 from termcolor import colored
 
 def Print(*message, color=None, on_color=None, sep=' ', verbose=True):
+    """
+    Print function integrated with color.
+    """
     if verbose:
         if color is None:
             print(*message)
@@ -13,6 +16,23 @@ def check_dir(*arg, isFile=False):
     if not os.path.isdir(path):
         os.makedirs(path, exist_ok=True)
     return os.path.join(path, arg[-1]) if isFile else path
+
+def get_items_from_file(filelist, useyaml=False, usejson=False, sep='\n'):
+    """
+    Simple wrapper for reading items from file.
+    If file is dumped by yaml or json, set `useyaml` or `userjson` flag ON.
+    """
+    if not os.path.isfile(filelist):
+        raise FileNotFoundError('No such file: {}'.format(filelist))
+
+    with open(filelist, 'r') as f:
+        if useyaml:
+            lines = yaml.load(f)
+        elif usejson:
+            lines = json.load(f)
+        else:
+            lines = f.read().split(sep)
+    return lines
 
 def recursive_glob(searchroot='.', searchstr=''):
     """
