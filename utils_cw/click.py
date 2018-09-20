@@ -4,13 +4,13 @@ import json
 import subprocess
 from termcolor import colored
 import click as cli
-from utils import save_sourcecode
 
 def print_smi(ctx, param, value):
     if value: 
         subprocess.call(["nvidia-smi"])
 
 def confirmation(ctx, param, value):
+    from .utils import save_sourcecode
     if cli.confirm(colored('Continue processing with these params?\n{}\n'.format(json.dumps(ctx.params,indent=2)), color='cyan'), default=True, abort=True):
         with open( os.path.join(ctx.params['output_dir'],'param.list'),'w') as f:
             json.dump(ctx.params, f, indent=2)
