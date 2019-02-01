@@ -1,7 +1,4 @@
-import os
-import sys
-import json
-import subprocess
+import os, sys, json, subprocess
 from termcolor import colored
 import click as cli
 
@@ -31,7 +28,7 @@ def confirmation(ctx, param, value, output_dir=None, output_dir_ctx=None, save_c
     '''
     from .utils import save_sourcecode
     
-    if cli.confirm(colored('Continue processing with these params?\n{}\n'.format(json.dumps(ctx.params,indent=2)), color='cyan'), default=True, abort=True):
+    if cli.confirm(colored('Continue processing with these params?\n{}'.format(json.dumps(ctx.params,indent=2)), color='cyan'), default=True, abort=True):
         try:
             out_dir = ctx.params[output_dir_ctx]
         except:
@@ -39,12 +36,13 @@ def confirmation(ctx, param, value, output_dir=None, output_dir_ctx=None, save_c
         
         if out_dir and os.path.isdir(out_dir):
             with open( os.path.join(out_dir,'param.list'),'w') as f:
-                json.dump(ctx.params, f, indent=2)
+                json.dump(ctx.params, f, indent=2, sort_keys=True)
 
+            file_path = os.path.abspath(sys.argv[0])
             if save_code is None:
-                save_code = cli.confirm(colored('Save source code?\n{}'.format(os.path.dirname(sys.argv[0])), color='cyan'), default=True)
+                save_code = cli.confirm(colored('Save source code of dir:\n{}'.format(os.path.dirname(file_path)), color='cyan'), default=True)
             if save_code:
-                save_sourcecode(os.path.dirname(sys.argv[0]), out_dir) #better use os.path.abspath(sys.argv[0])?
+                save_sourcecode(os.path.dirname(file_path), out_dir)
 
 def output_dir_check(ctx, param, value):
     from .utils import check_dir
@@ -54,3 +52,15 @@ def output_dir_check(ctx, param, value):
     else:
         if cli.confirm('Output dir not exists! Do you want to create new one?', default=True, abort=True):
             return check_dir(value)
+
+def output_dir_name(ctx, param, value, parent_dir=None):
+    from .utils import check_dir
+
+    dir_path = os.path.join(parent_dir, value) if parent_dir else value
+
+    if os.path.isdir(dir_path):
+        return dir_path
+    elif cli.confirm('Output dir not exists! Do you want to create new one?\n{}'.format(dir_path), default=True, abort=True):
+        return check_dir(dir_path)
+
+    

@@ -1,4 +1,4 @@
-import os
+import os, time
 from termcolor import colored
 
 def Print(*message, color=None, on_color=None, sep=' ', verbose=True):
@@ -6,9 +6,11 @@ def Print(*message, color=None, on_color=None, sep=' ', verbose=True):
     Print function integrated with color.
     """
     if verbose:
+        color_map = {'r':'red', 'g':'green', 'b':'blue', 'y':'yellow', 'm':'magenta', 'c':'cyan', 'w':'white'}
         if color is None:
             print(*message)
-        else:
+        else: 
+            color = color_map[color] if len(color) == 1 else color
             print(colored(sep.join(map(str,message)), color=color, on_color=on_color))
 
 def check_dir(*arg, isFile=False):
@@ -116,7 +118,7 @@ def save_sourcecode(code_rootdir, out_dir, file_type='*.py', verbose=True):
     if not os.path.isdir(code_rootdir):
         raise FileNotFoundError('Code root dir not exists! {}'.format(code_rootdir))
     Print('Backup source code under root_dir:', code_rootdir, color='red', verbose=verbose)
-    outpath = check_dir(out_dir, 'source_code.tar', isFile=True)
+    outpath = check_dir(out_dir, 'source_code_{}.tar'.format(time.strftime("%m%d_%H%M")), isFile=True)
     tar_opt = 'cvf' if verbose else 'cf'
     os.system("find {} -name '{}' | tar -{} {} -T -".format(code_rootdir, file_type, tar_opt, outpath))
 
@@ -141,7 +143,10 @@ def plot_confusion_matrix(y_true, y_pred,
     """
     import numpy as np
     import pandas as pd
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+
     import seaborn as sns
     from sklearn.metrics import confusion_matrix
 

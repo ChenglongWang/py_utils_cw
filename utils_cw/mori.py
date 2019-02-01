@@ -88,14 +88,16 @@ def read_mori(filename,dtype,gz=None):
     return I, hdr
 
 def write_mori(I,spacing,filename,use_gzip=True):
-    I = I[::-1,::-1,::-1] # reverse
+    #I = I[::-1,::-1,::-1] # reverse
 
     if I.dtype == np.uint8:
         raw_ext = '.uc_raw'
     else:
         raw_ext = '.raw'
 
-    filename = os.path.splitext(filename)[0] # remove extensions given
+    filename = filename.strip('.gz')  # remove extensions given
+    filename = filename.strip('.raw')
+
     # write raw
     if use_gzip:
         out_rawfilename = filename+raw_ext+'.gz'
@@ -107,7 +109,7 @@ def write_mori(I,spacing,filename,use_gzip=True):
             f.write(I.tobytes('F'))
 
     # write header
-    out_hdrfilename = filename+'.header'
+    out_hdrfilename = out_rawfilename+'.header'
     with open(out_hdrfilename,'w') as f:
         hdr_fields = get_mori_header_fields()
         for field in hdr_fields: # \r\n
@@ -130,7 +132,7 @@ def write_mori(I,spacing,filename,use_gzip=True):
     return out_hdrfilename
 
 def get_mori_header_fields():
-    hdr_fields = [];
+    hdr_fields = []
     hdr_fields.append('OrgFile       :')
     hdr_fields.append('MarkFile1     :')
     hdr_fields.append('SizeX         :')
@@ -139,10 +141,10 @@ def get_mori_header_fields():
     hdr_fields.append('PitchX        :')
     hdr_fields.append('PitchY        :')
     hdr_fields.append('PitchZ        :')
-    hdr_fields.append('Thickness     : 1.000000')
+    hdr_fields.append('Thickness     :')
     hdr_fields.append('ImagePositionBegin   :')
     hdr_fields.append('ImagePositionEnd   :')
-    hdr_fields.append('Orientation   : LPF')
+    hdr_fields.append('Orientation   :')
     hdr_fields.append('PatientID     :')
     hdr_fields.append('Hospital      :')
     hdr_fields.append('Exp_Date_Year : 0')
@@ -155,12 +157,12 @@ def get_mori_header_fields():
     hdr_fields.append('AMP           :')
     hdr_fields.append('KernelFunction :')
     hdr_fields.append('ModelName     :')
-    hdr_fields.append('PatientPosition    : HFS')
-    hdr_fields.append('PatientOrientation : L\\P')
-    hdr_fields.append('ImageOrientation  : 1.000000\\0.000000\\0.000000\\0.000000\\1.000000\\0.000000')
+    hdr_fields.append('PatientPosition    :')
+    hdr_fields.append('PatientOrientation :')
+    hdr_fields.append('ImageOrientation  :')
     hdr_fields.append('ImagePosition  : None')
     hdr_fields.append('StudyDate     :')
-    hdr_fields.append('SeriesData    :')
+    hdr_fields.append('SeriesDate    :')
     hdr_fields.append('AcquisitionDate :')
     hdr_fields.append('Comment1 :')
     hdr_fields.append('Comment2 :')
