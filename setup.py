@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='utils_cw',
-      version='0.3',
+      version='0.4',
       description='Common utils for daily python programming',
       url='https://github.com/ChenglongWang/py_utils_cw',
       author='Chenglong Wang',
