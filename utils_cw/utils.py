@@ -1,4 +1,4 @@
-import os, time
+import os, time, yaml, json
 from termcolor import colored
 
 def Print(*message, color=None, on_color=None, sep=' ', verbose=True):
@@ -36,34 +36,34 @@ def get_items_from_file(filelist, useyaml=False, usejson=False, sep='\n'):
             lines = f.read().split(sep)
     return lines
 
-def recursive_glob(searchroot='.', searchstr=''):
+def recursive_glob(searchroot='.', searchstr='', verbose=False):
     """
     recursive glob with one search keyword
     """
     if not os.path.isdir(searchroot):
         raise ValueError('No such directory: {}'.format(searchroot))
-    print("search for {0} in {1}".format(searchstr,searchroot))
+    Print("search for {0} in {1}".format(searchstr,searchroot), verbose=verbose)
     f = [os.path.join(rootdir, filename)
         for rootdir, dirnames, filenames in os.walk(searchroot)
         for filename in filenames if searchstr in filename]
     f.sort()
     return f
 
-def recursive_glob2(searchroot='.', searchstr1='', searchstr2=''):
+def recursive_glob2(searchroot='.', searchstr1='', searchstr2='', verbose=False):
     """
     recursive glob with two search keywords
     """
 
     if not os.path.isdir(searchroot):
         raise ValueError('No such directory: {}'.format(searchroot))
-    print("search for {} and {} in {}".format(searchstr1,searchstr2,searchroot))
+    Print("search for {} and {} in {}".format(searchstr1,searchstr2,searchroot), verbose=verbose)
     f = [os.path.join(rootdir, filename)
         for rootdir, dirnames, filenames in os.walk(searchroot)
         for filename in filenames if (searchstr1 in filename and searchstr2 in filename)]
     f.sort()
     return f
 
-def recursive_glob3(searchroot='.', searchstr_list=None, excludestr_list=None, verbose=True):
+def recursive_glob3(searchroot='.', searchstr_list=None, excludestr_list=None, verbose=False):
     """
     searchroot: search root dir.
     searchstr_list: search keywords list. [required]
@@ -75,8 +75,7 @@ def recursive_glob3(searchroot='.', searchstr_list=None, excludestr_list=None, v
     if searchstr_list is None:
         raise ValueError('Search keyword list is empty!')
 
-    if verbose:
-        print('search for:', searchstr_list, 'exclude:', excludestr_list ,'in: ', searchroot)
+    Print('search for:', searchstr_list, 'exclude:', excludestr_list ,'in: ', searchroot, verbose=verbose)
 
     f = []
     for rootdir, dirnames, filenames in os.walk(searchroot):

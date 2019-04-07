@@ -2,20 +2,23 @@ import numpy as np
 from scipy.ndimage import label, generate_binary_structure
 from scipy.ndimage.morphology import binary_dilation, binary_erosion, binary_fill_holes
 
-def Normalize(data):
+def Normalize(data, verbose=False):
     '''
     Z-score normalization
     '''
-    mean_data = np.mean(data)
-    std_data = np.std(data)
+    mean_data, std_data = np.mean(data), np.std(data)
+    if verbose:
+        print('Normalize mean:', mean_data,'std:',std_data)
     norm_data = (data-mean_data)/std_data
     return norm_data
 
-def Normalize2(data):
+def Normalize2(data, verbose=False):
     '''
     Min-Max normalization
     '''
     minValue, maxValue = np.min(data), np.max(data)
+    if verbose:
+        print('Normalize2 min:', minValue,'max:',maxValue)
     norm_data = (data-minValue) / (maxValue-minValue)
     return norm_data.astype(np.float32)
 

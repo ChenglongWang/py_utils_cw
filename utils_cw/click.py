@@ -28,7 +28,7 @@ def confirmation(ctx, param, value, output_dir=None, output_dir_ctx=None, save_c
     '''
     from .utils import save_sourcecode
     
-    if cli.confirm(colored('Continue processing with these params?\n{}'.format(json.dumps(ctx.params,indent=2)), color='cyan'), default=True, abort=True):
+    if cli.confirm(colored('Continue processing with these params?\n{}'.format(json.dumps(ctx.params,indent=2,sort_keys=True)), color='cyan'), default=True, abort=True):
         try:
             out_dir = ctx.params[output_dir_ctx]
         except:
@@ -63,4 +63,10 @@ def output_dir_name(ctx, param, value, parent_dir=None):
     elif cli.confirm('Output dir not exists! Do you want to create new one?\n{}'.format(dir_path), default=True, abort=True):
         return check_dir(dir_path)
 
-    
+def prompt_when(ctx, param, value, trigger):
+    from .utils import Print
+    if trigger in ctx.params and ctx.params[trigger]:
+        prompt_string = '\t--> ' + param.name.replace('_', ' ').capitalize()
+        Print('This option appears because you triggered:', trigger, color='y')
+        return cli.prompt(prompt_string, default=value, type=param.type, \
+                          hide_input=param.hide_input, confirmation_prompt=param.confirmation_prompt)

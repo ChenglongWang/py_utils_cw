@@ -57,11 +57,11 @@ def read_mori_raw(filename,dtype,hdr=None,gz=None):
     if hdr is None:
         NX=512
         NY=512
-        NZ = np.size(I)/(NX*NY) # assuem Mori raw with 512x512xNZ shape or mhd
+        NZ = int(np.size(I)/(NX*NY)) # assuem Mori raw with 512x512xNZ shape or mhd
     else:
-        NX=hdr['SizeX']
-        NY=hdr['SizeY']
-        NZ=hdr['SizeZ']
+        NX=int(hdr['SizeX'])
+        NY=int(hdr['SizeY'])
+        NZ=int(hdr['SizeZ'])
     I = np.reshape(I,(NX,NY,NZ),'F')
     #I = np.reshape(I,(NZ,NX,NY))
     #I = np.transpose(I,(2,1,0))
