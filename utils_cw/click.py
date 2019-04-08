@@ -26,7 +26,7 @@ def confirmation(ctx, param, value, output_dir=None, output_dir_ctx=None, save_c
         save_code: Set to True/False to enable/disable saving code.
                    Default is None, will request for confirmation every time. 
     '''
-    from .utils import save_sourcecode
+    from .utils import save_sourcecode, check_dir
     
     if cli.confirm(colored('Continue processing with these params?\n{}'.format(json.dumps(ctx.params,indent=2,sort_keys=True)), color='cyan'), default=True, abort=True):
         try:
@@ -34,6 +34,7 @@ def confirmation(ctx, param, value, output_dir=None, output_dir_ctx=None, save_c
         except:
             out_dir = output_dir
         
+        out_dir = check_dir(out_dir)
         if out_dir and os.path.isdir(out_dir):
             with open( os.path.join(out_dir,'param.list'),'w') as f:
                 json.dump(ctx.params, f, indent=2, sort_keys=True)
@@ -70,3 +71,5 @@ def prompt_when(ctx, param, value, trigger):
         Print('This option appears because you triggered:', trigger, color='y')
         return cli.prompt(prompt_string, default=value, type=param.type, \
                           hide_input=param.hide_input, confirmation_prompt=param.confirmation_prompt)
+    else:
+        return value
