@@ -6,7 +6,7 @@ from logging import Formatter, handlers, \
                     StreamHandler, getLogger, \
                     DEBUG, INFO, WARNING, ERROR, CRITICAL
 from termcolor import COLORS
-from utils_cw import check_dir
+from .utils import check_dir
 
 color_map = {CRITICAL:'magenta', ERROR:'red', WARNING:'yellow', INFO:'green', DEBUG: 'white'}
 
