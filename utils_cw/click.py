@@ -73,3 +73,13 @@ def prompt_when(ctx, param, value, trigger):
                           hide_input=param.hide_input, confirmation_prompt=param.confirmation_prompt)
     else:
         return value
+
+def prompt_when_not(ctx, param, value, trigger):
+    from .utils import Print
+    if trigger in ctx.params and not ctx.params[trigger]:
+        prompt_string = '\t--> ' + param.name.replace('_', ' ').capitalize()
+        Print('This option appears because you did not trigger:', trigger, color='y')
+        return cli.prompt(prompt_string, default=value, type=param.type, \
+                          hide_input=param.hide_input, confirmation_prompt=param.confirmation_prompt)
+    else:
+        return value

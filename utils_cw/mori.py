@@ -50,10 +50,10 @@ def read_mori_raw(filename,dtype,hdr=None,gz=None):
     if '.gz' in basename or gz is True:
         with gzip.open(filename, 'rb') as f:
             file_content = f.read()
-        I = np.frombuffer(file_content,dtype)
+        I = np.frombuffer(file_content,dtype).copy()
     else:
-        I = np.fromfile(filename,dtype)
-    I.flags['WRITEABLE'] = True
+        I = np.fromfile(filename,dtype).copy()
+    #I.flags['WRITEABLE'] = True
     if hdr is None:
         NX=512
         NY=512

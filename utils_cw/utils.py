@@ -1,17 +1,17 @@
 import os, time, yaml, json
 from termcolor import colored
 
-def Print(*message, color=None, on_color=None, sep=' ', verbose=True):
+def Print(*message, color=None, on_color=None, sep=' ', end='\n', verbose=True):
     """
     Print function integrated with color.
     """
     if verbose:
         color_map = {'r':'red', 'g':'green', 'b':'blue', 'y':'yellow', 'm':'magenta', 'c':'cyan', 'w':'white'}
         if color is None:
-            print(*message)
+            print(*message, end=end)
         else: 
             color = color_map[color] if len(color) == 1 else color
-            print(colored(sep.join(map(str,message)), color=color, on_color=on_color))
+            print(colored(sep.join(map(str,message)), color=color, on_color=on_color), end=end)
 
 def check_dir(*arg, isFile=False):
     path = os.path.join(*(arg[0:-1])) if isFile else os.path.join(*arg)
