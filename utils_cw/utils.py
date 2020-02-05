@@ -175,3 +175,45 @@ def plot_confusion_matrix(y_true, y_pred,
     fig, ax = plt.subplots(figsize=figsize)
     sns.heatmap(cm, annot=annot, fmt='', ax=ax)
     plt.savefig(filename)
+
+def volume_snapshot(data, slice_percentile=50, axis:int=0, output_fname=None, **kwargs):
+    '''
+    data: input 3d volume, must be normlized
+    slice_percentile: (int, tuple) int for single image, tuple for gif slice range
+    axis: output axis
+    output_fname: output image file name, must include ext
+    duration: (optional) set duration time for gif animation
+    loop: (optional) set loop time for gif animation
+    '''
+    from PIL import Image
+    import numpy as np
+    import collections
+
+    duration = kwargs.get('duration', 40)
+    loop     = kwargs.get('loop', 0)
+        
+    checker = lambda x: min(99, max(0,x))
+
+    slice_num = data.shape[axis]
+
+    if isinstance(slice_percentile, int):
+        slice_percentile = checker(slice_percentile)
+        slices = [int(slice_num*(slice_percentile/100))]
+    elif isinstance(slice_percentile, collections.Sequence):
+        slice_percentiles = [checker(slice_percentile[0]),checker(slice_percentile[1])]
+        slices = [int(slice_num*(slice_percentiles[0]/100)), int(slice_num*(slice_percentiles[1]/100))]
+        slices = np.arange(slices[0], slices[1])
+
+
+    img_list = []
+    for slice_idx in slices:
+        slice_data = np.take(data, slice_idx, axis=axis)
+        slice_8bit = np.multiply(slice_data, 255)
+        pil_img = Image.fromarray(slice_8bit.astype(np.uint8))
+        img_list.append(pil_img)
+
+    if '.gif' in output_fname:
+        img_list[0].save(output_fname, save_all=True, append_images=img_list[1:], duration=duration, loop=loop)
+    else:
+        [im.save(output_fname) for i,im in enumerate(img_list)]
+    
