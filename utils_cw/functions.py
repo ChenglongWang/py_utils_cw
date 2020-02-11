@@ -1,19 +1,19 @@
+import random, numbers
 import numpy as np
 from scipy import ndimage
 from scipy.ndimage.filters import gaussian_filter, median_filter
 from scipy.ndimage.interpolation import map_coordinates
 from skimage.transform import resize
 from PIL import Image
-import numbers
 
 
-def random_num_generator(config, random_state=np.random, cast_type=None):
+def random_num_generator(config, random_state=random, cast_type=None):
     if config[0] == 'uniform':
-        ret = random_state.uniform(config[1], config[2], 1)[0]
+        ret = random_state.uniform(config[1], config[2])
     elif config[0] == 'lognormal':
-        ret = random_state.lognormal(config[1], config[2], 1)[0]
+        ret = random_state.lognormvariate(config[1], config[2])
     elif config[0] == 'choice':
-        ret = random_state.choice(config[1], 1)[0]
+        ret = random_state.choice(config[1])
     else:
         print(config)
         raise Exception('unsupported format')

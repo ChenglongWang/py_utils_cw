@@ -7,6 +7,7 @@ except ImportError:
 
 from .functions import *
 from .utils import Print
+from .proc import crop3D, __get_random_center
 
 class Compose(object):
     """
@@ -50,7 +51,7 @@ class RandomChoiceCompose(object):
         self.constraint_trans_first = constraint_trans_first
 
     def __call__(self, *inputs):
-        choices = np.random.choice(np.arange(len(self.candidate_transforms)), size=self.n_choice, replace=False)
+        choices = random.choices(np.arange(len(self.candidate_transforms)), k=self.n_choice)
         tforms = [self.candidate_transforms[c] for c in choices]
         if self.verbose:
             Print(tforms, 'transform was chosen!', color='y')
@@ -548,6 +549,48 @@ class LocalPixelShuffleTransform(TransformBase):
 
         return image_, label
 
+class GlobalPatchShuffleTransform(TransformBase):
+    def __init__(self, num_block=5, size=10, mode='swap'):
+        '''
+        This function randomly shuffle sub-patches in the input volomes.
+        :param num_block: num of shuffled blocks. 
+        :param size: size of blocks.
+        :param mode: 'swap': swap two random blocks, which means 2*N blocks will be shuffled.
+                     'replace': only copy one block to another place.
+        '''
+        self.num_block = num_block 
+        self.size = size
+        assert mode in ['swap', 'replace'], 'Mode MUST be either swap or replace'
+        self.mode = mode
+
+    def __call__(self, image, label=None):
+        if isinstance(self.num_block, collections.Sequence):
+            num_block = random_num_generator(self.num_block, cast_type=int)
+        else:
+            num_block = self.num_block
+
+        if isinstance(self.size, collections.Sequence):
+            size = random_num_generator(self.size, cast_type=int)
+        else:
+            size = self.size
+
+        img_rows, img_cols, img_deps = image.shape
+        image_ = image.copy()
+        for _ in range(num_block):
+            crop, center = crop3D(image_, size, label=None)
+            if self.mode == 'swap':
+                new_crop, new_center = crop3D(image_, size, label=None)
+                range_ = [slice(center[i]-size//2,center[i]+size-size//2) for i in range(3)]
+                image_[range_[0],range_[1],range_[2]] = new_crop
+                range_ = [slice(new_center[i]-size//2,new_center[i]+size-size//2) for i in range(3)]
+                image_[range_[0], range_[1], range_[2]] = crop
+            elif self.mode == 'replace':
+                new_center = __get_random_center(image_, None, (size,)*3)
+                range_ = [slice(new_center[i]-size//2,new_center[i]+size-size//2) for i in range(3)]
+                image_[range_[0], range_[1], range_[2]] = crop
+        return image_, label
+
+
 if __name__ == '__main__':
     import nibabel as nib
     from utils_cw.utils import check_dir, volume_snapshot
@@ -564,19 +607,19 @@ if __name__ == '__main__':
 
         return rmin, rmax, cmin, cmax, zmin, zmax
 
-    data_fname = "/dataT0/Free/cwang/WSD/Task03_Liver/imagesTr/liver_5.nii.gz"
-    label_fname = "/dataT0/Free/cwang/WSD/Task03_Liver/labelsTr/liver_5.nii.gz"
+    data_fname = "/dataT0/Free/cwang/MSD/Task03_Liver/imagesTr/liver_5.nii.gz"
+    label_fname = "/dataT0/Free/cwang/MSD/Task03_Liver/labelsTr/liver_5.nii.gz"
 
     data = nib.load(data_fname).get_data()
     label = nib.load(label_fname).get_data()
-    bbox, _ = crop3D(data, (96,)*3, label=label)
+    bbox, _ = crop3D(data, (64,)*3, label=None)
     #crop = np.squeeze(data[..., bbox[0]:bbox[1], bbox[2]:bbox[3], bbox[4]:bbox[5]])
     crop = np.squeeze(bbox)
     crop = Normalize2(crop)
     print('Crop size:', crop.shape)
     volume_snapshot(crop, slice_percentile=(30,70), axis=2, output_fname='/dataT0/Free/kits/cwang/test/testcrop.gif')
     
-    # for i in range(4):
+    for i in range(7):
     #     values = [0.02, 0.04, 0.06, 0.08]
     #     crop_, _ = GaussianNoiseTransfrom(variance_range=['uniform', values[i], values[i]])(crop)
     #     nib.save( nib.Nifti1Image(crop_, np.eye(4)), '/homes/cwang/kits19/testcrop_noise_{}.nii.gz'.format(values[i]) )
@@ -586,10 +629,13 @@ if __name__ == '__main__':
     #     values = [0.5, 0.8, 1.2, 1.5]
     #     crop_, _ = ContrastTransform(contrast_range=['uniform', 0.7, 1.2])(crop)
     #     nib.save( nib.Nifti1Image(crop_, np.eye(4)), '/homes/cwang/kits19/testcrop_contr_{}.nii.gz'.format(values[i]) )
-    #     values = [3, 5, 7, 9]
-    #     crop_, _ = MultipleElasticTransform(alpha=['uniform', 2, 7], sigma=['uniform', 0.08, 0.1])(crop, np.ones_like(crop))
-    #     nib.save( nib.Nifti1Image(crop_, np.eye(4)), '/homes/cwang/kits19/testcrop_affine_{}.nii.gz'.format(values[i]) )
+        values = [50, 60, 70, 80, 90, 100, 110]
+        crop_, _ = MultipleElasticTransform(alpha=['uniform',values[i],values[i]], sigma=['uniform',0.3,0.4])(crop, None)
+        nib.save( nib.Nifti1Image(crop_, np.eye(4)), '/homes/cwang/kits19/test_augmentation/testcrop_affine_{}.nii.gz'.format(values[i]) )
+        volume_snapshot(crop_, slice_percentile=(20,80), axis=2, output_fname='/homes/cwang/kits19/test_augmentation/{} {}.gif'.format(i, 'MultipleElastic'))
     
+    os.sys.exit()
+
     augmentor = RandomChoiceCompose([
                     MultipleElasticTransform(alpha=['uniform',60,140], sigma=['uniform',0.2,0.3]),  #0
                     GammaTransform(gamma_range=['uniform',0.05,0.3]),                               #1

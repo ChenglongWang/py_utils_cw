@@ -60,7 +60,7 @@ def confirmation(ctx, param, value, output_dir=None, output_dir_ctx=None, save_c
 def output_dir_check(ctx, param, value):
     from .utils_py36 import check_dir
 
-    if os.path.isdir(value):
+    if Path.is_dir(value):
         return value
     else:
         if cli.confirm('Output dir not exists! Do you want to create new one?', default=True, abort=True):
@@ -105,3 +105,45 @@ def prompt_when_not(ctx, param, value, trigger):
                           hide_input=param.hide_input, confirmation_prompt=param.confirmation_prompt)
     else:
         return value
+
+def volume_snapshot(data, slice_percentile=50, axis:int=0, output_fname=None, **kwargs):
+    '''
+    data: input 3d volume, must be normlized
+    slice_percentile: (int, tuple) int for single image, tuple for gif slice range
+    axis: output axis
+    output_fname: output image file name, must include ext
+    duration: (optional) set duration time for gif animation
+    loop: (optional) set loop time for gif animation
+    '''
+    from PIL import Image
+    import numpy as np
+    import collections
+
+    duration = kwargs.get('duration', 40)
+    loop     = kwargs.get('loop', 0)
+        
+    checker = lambda x: min(99, max(0,x))
+
+    slice_num = data.shape[axis]
+
+    if isinstance(slice_percentile, int):
+        slice_percentile = checker(slice_percentile)
+        slices = [int(slice_num*(slice_percentile/100))]
+    elif isinstance(slice_percentile, collections.Sequence):
+        slice_percentiles = [checker(slice_percentile[0]),checker(slice_percentile[1])]
+        slices = [int(slice_num*(slice_percentiles[0]/100)), int(slice_num*(slice_percentiles[1]/100))]
+        slices = np.arange(slices[0], slices[1])
+
+
+    img_list = []
+    for slice_idx in slices:
+        slice_data = np.take(data, slice_idx, axis=axis)
+        slice_8bit = np.multiply(slice_data, 255)
+        pil_img = Image.fromarray(slice_8bit.astype(np.uint8))
+        img_list.append(pil_img)
+
+    if '.gif' in output_fname:
+        img_list[0].save(output_fname, save_all=True, append_images=img_list[1:], duration=duration, loop=loop)
+    else:
+        [im.save(output_fname) for i,im in enumerate(img_list)]
+    
