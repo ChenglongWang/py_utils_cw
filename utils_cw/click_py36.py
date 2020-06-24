@@ -2,6 +2,7 @@ import os, sys, json, subprocess
 from termcolor import colored
 import click as cli
 from pathlib import Path
+from .utils_py36 import Print
 
 class PathlibEncoder(json.JSONEncoder):
     def default(self, obj):

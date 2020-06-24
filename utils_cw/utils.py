@@ -19,18 +19,18 @@ def check_dir(*arg, isFile=False):
         os.makedirs(path, exist_ok=True)
     return os.path.join(path, arg[-1]) if isFile else path
 
-def get_items_from_file(filelist, useyaml=False, usejson=False, sep='\n'):
+def get_items_from_file(filelist, format=None, sep='\n'):
     """
     Simple wrapper for reading items from file.
-    If file is dumped by yaml or json, set `useyaml` or `userjson` flag ON.
+    If file is dumped by yaml or json, set `format` to `json`/`yaml`.
     """
     if not os.path.isfile(filelist):
-        raise FileNotFoundError('No such file: {}'.format(filelist))
+        raise FileNotFoundError(f'No such file: {filelist}')
 
     with open(filelist, 'r') as f:
-        if useyaml:
+        if format=='yaml':
             lines = yaml.load(f)
-        elif usejson:
+        elif format=='json':
             lines = json.load(f)
         else:
             lines = f.read().split(sep)

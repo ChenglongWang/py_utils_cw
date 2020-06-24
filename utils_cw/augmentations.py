@@ -5,9 +5,9 @@ try:  # SciPy >= 0.19
 except ImportError:
     from scipy.misc import comb
 
-from .functions import *
-from .utils import Print
-from .proc import crop3D, __get_random_center
+from utils_cw.functions import *
+from utils_cw.utils import Print
+from utils_cw.proc import crop3D, __get_random_center
 
 class Compose(object):
     """

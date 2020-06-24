@@ -2,7 +2,7 @@ import random
 import numpy as np
 from scipy.ndimage import label, generate_binary_structure
 from scipy.ndimage.morphology import binary_dilation, binary_erosion, binary_fill_holes
-from .utils import Print
+from utils_cw.utils import Print
 
 def Normalize(data, verbose=False):
     '''
@@ -103,10 +103,15 @@ def __get_gt_center(data, label, crop_size):
 def __crop3D_with_pad(data, label, size, center_fn, crop_center=None, **kwargs):
     verbose = kwargs.get('verbose', False)
     bias = kwargs.get('pos_bias', 0)
+    center_threshold = kwargs.get('crop_center_threshold', None)
 
     dshape = data.shape[-3:]
     if crop_center is None:
         crop_center = center_fn(data, label, size)
+        if center_threshold is not None:
+            while data[..., crop_center[0],crop_center[1],crop_center[2]]<=center_threshold:
+                Print('Crop center intensity is lower than', center_threshold, 'Redo!', color='g', verbose=verbose)
+                crop_center = center_fn(data, label, size)
 
     if isinstance(bias, int):
         bias = (bias,)*3
@@ -167,9 +172,15 @@ def __crop3D_no_pad(data, label, size, center_fn, crop_center=None, **kwargs):
     Please insure you want no_pad cropping. Otherwise use __crop3D_with_pad() instead!
     '''
     verbose = kwargs.get('verbose', False)
+    center_threshold = kwargs.get('crop_center_threshold', None)
 
     if crop_center is None:
         crop_center = center_fn(data, label, size)
+        if center_threshold is not None:
+            while data[..., crop_center[0],crop_center[1],crop_center[2]]<=center_threshold:
+                Print('Crop center intensity is lower than', center_threshold, 'Redo!', color='g', verbose=verbose)
+                crop_center = center_fn(data, label, size)
+                
     x, y, z = crop_center
     dshape = data.shape[-3:]
 
@@ -189,7 +200,7 @@ def crop3D(data, crop_size, label=None, crop_center=None, pad=(0,0,0), **kwargs)
     data: shape can be (n,c,w,h,d) or (c,w,h,d) or (w,h,d). anyway last 3 dims should be WHD.
     label: None-> random cropping; else-> random nonzero point as crop_center
     pad: pad crop size at boarder
-    kwargs: optional arguments -> verbose; pos_bias; force_no_pad
+    kwargs: optional arguments -> verbose; pos_bias; force_no_pad; crop_center_threshold
     '''
 
     pad_crop_size = np.add(crop_size, np.multiply(pad,2))
