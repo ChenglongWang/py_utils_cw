@@ -1,4 +1,5 @@
-import os, time, yaml, json
+import os, time, yaml, json, h5py
+import numpy as np
 from pathlib import Path
 from termcolor import colored
 
@@ -36,6 +37,21 @@ def get_items_from_file(filelist, format=None, sep='\n'):
         else:
             lines = f.read().split(sep)
     return lines
+
+def load_h5(h5_file:str, keywords:list, transpose=None, verbose=False):
+    hf = h5py.File(h5_file, 'r')
+    #print('List of arrays in this file: \n', hf.keys())
+    dataset = [ np.copy(hf.get(key)) if key in hf.keys() else None for key in keywords ]
+    if verbose:
+        [ Print(f'{key} shape: {np.shape(data)}', color='g') if 
+          data is not None else Print(f'{key} is None', color='r') for 
+          key, data in zip(keywords, dataset) ]
+
+    if transpose is not None:
+        dataset = [np.transpose(data, transpose) if data is not None
+            else None for data in dataset
+        ]
+    return dataset
 
 def recursive_glob(searchroot='.', searchstr='', verbose=False):
     """
