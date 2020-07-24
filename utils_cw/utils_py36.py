@@ -26,7 +26,7 @@ def get_items_from_file(filelist, format=None, sep='\n'):
     Simple wrapper for reading items from file.
     If file is dumped by yaml or json, set `format` to `json`/`yaml`.
     """
-    if not os.path.isfile(filelist):
+    if not Path.isfile(filelist):
         raise FileNotFoundError(f'No such file: {filelist}')
 
     with open(filelist, 'r') as f:
@@ -59,26 +59,43 @@ def recursive_glob(searchroot='.', searchstr='', verbose=False):
     """
     if not os.path.isdir(searchroot):
         raise ValueError(f'No such directory: {searchroot}')
+    
+    if '*' not in searchstr:
+        searchstr = '*'+searchstr+'*'
+
     Print(f"search for {searchstr} in {searchroot}", verbose=verbose)
-    f = [os.path.join(rootdir, filename)
+    
+    f = [Path(rootdir).joinpath(filename)
         for rootdir, dirnames, filenames in os.walk(searchroot)
-        for filename in filenames if searchstr in filename]
+        for filename in filenames if Path(filename).match(searchstr)]
     f.sort()
     return f
 
-def recursive_glob2(searchroot='.', searchstr1='', searchstr2='', verbose=False):
+def recursive_glob2(searchroot='.', searchstr1='', searchstr2='', logic='and', verbose=False):
     """
     recursive glob with two search keywords
     """
     if not os.path.isdir(searchroot):
         raise ValueError(f'No such directory: {searchroot}')
-    Print(f"search for {searchstr1} and {searchstr2} in {searchroot}", verbose=verbose)
-    f = [os.path.join(rootdir, filename)
+    if logic == 'and':
+        logic_op = np.logical_and
+    elif logic == 'or':
+        logic_op = np.logical_or
+
+    if '*' not in searchstr1:
+        searchstr1 = '*'+searchstr1+'*'
+    if '*' not in searchstr2:
+        searchstr2 = '*'+searchstr2+'*'
+
+    Print(f"search for {searchstr1} {logic} {searchstr2} in {searchroot}", verbose=verbose)
+    
+    f = [Path(rootdir).joinpath(filename)
         for rootdir, dirnames, filenames in os.walk(searchroot)
-        for filename in filenames if (searchstr1 in filename and searchstr2 in filename)]
+        for filename in filenames if logic_op(Path(filename).match(searchstr1), Path(filename).match(searchstr2))]
     f.sort()
     return f
 
+#! Todo: add logic_op option like recursive_glob2
 def recursive_glob3(searchroot='.', searchstr_list=None, excludestr_list=None, verbose=False):
     """
     searchroot: search root dir.
@@ -96,13 +113,13 @@ def recursive_glob3(searchroot='.', searchstr_list=None, excludestr_list=None, v
     f = []
     for rootdir, dirnames, filenames in os.walk(searchroot):
         for incl in searchstr_list:
-            filenames = [fname for fname in filenames if incl in fname]
+            filenames = [fname for fname in filenames if incl in fname.lower()]
         for fname in filenames:
             f.append(os.path.join(rootdir, fname))
 
     if excludestr_list is not None:
         for ex in excludestr_list:
-            f = [fname for fname in f if ex not in fname]
+            f = [fname for fname in f if ex not in fname.lower()]
 
     f.sort()
     return f
