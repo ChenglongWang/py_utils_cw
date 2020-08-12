@@ -41,6 +41,10 @@ def get_items_from_file(filelist, format=None, sep='\n'):
 def load_h5(h5_file:str, keywords:list, transpose=None, verbose=False):
     hf = h5py.File(h5_file, 'r')
     #print('List of arrays in this file: \n', hf.keys())
+    if len(keywords) == 0:
+        Print('Get all items:', hf.keys(), verbose=verbose)
+        keywords = list(hf.keys())
+
     dataset = [ np.copy(hf.get(key)) if key in hf.keys() else None for key in keywords ]
     if verbose:
         [ Print(f'{key} shape: {np.shape(data)}', color='g') if 
