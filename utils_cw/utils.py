@@ -1,4 +1,6 @@
-import os, time, yaml, json
+import os, time, yaml, json, h5py
+import numpy as np
+from pathlib import Path
 from termcolor import colored
 
 def Print(*message, color=None, on_color=None, sep=' ', end='\n', verbose=True):
@@ -13,18 +15,18 @@ def Print(*message, color=None, on_color=None, sep=' ', end='\n', verbose=True):
             color = color_map[color] if len(color) == 1 else color
             print(colored(sep.join(map(str,message)), color=color, on_color=on_color), end=end)
 
-def check_dir(*arg, isFile=False):
-    path = os.path.join(*(arg[0:-1])) if isFile else os.path.join(*arg)
-    if not os.path.isdir(path):
-        os.makedirs(path, exist_ok=True)
-    return os.path.join(path, arg[-1]) if isFile else path
+def check_dir(*arg, isFile=False, exist_ok=True):
+    path = Path(*(arg[0:-1])) if isFile else Path(*arg)
+    if not path.is_dir():
+        os.makedirs(path, exist_ok=exist_ok)
+    return path/arg[-1] if isFile else path
 
 def get_items_from_file(filelist, format=None, sep='\n'):
     """
     Simple wrapper for reading items from file.
     If file is dumped by yaml or json, set `format` to `json`/`yaml`.
     """
-    if not os.path.isfile(filelist):
+    if not Path(filelist).is_file():
         raise FileNotFoundError(f'No such file: {filelist}')
 
     with open(filelist, 'r') as f:
@@ -36,33 +38,68 @@ def get_items_from_file(filelist, format=None, sep='\n'):
             lines = f.read().split(sep)
     return lines
 
+def load_h5(h5_file:str, keywords:list, transpose=None, verbose=False):
+    hf = h5py.File(h5_file, 'r')
+    #print('List of arrays in this file: \n', hf.keys())
+    if len(keywords) == 0:
+        Print('Get all items:', hf.keys(), verbose=verbose)
+        keywords = list(hf.keys())
+
+    dataset = [ np.copy(hf.get(key)) if key in hf.keys() else None for key in keywords ]
+    if verbose:
+        [ Print(f'{key} shape: {np.shape(data)}', color='g') if 
+          data is not None else Print(f'{key} is None', color='r') for 
+          key, data in zip(keywords, dataset) ]
+
+    if transpose:
+        dataset = [np.transpose(data, transpose) if data is not None
+            else None for data in dataset
+        ]
+    return dataset
+
 def recursive_glob(searchroot='.', searchstr='', verbose=False):
     """
     recursive glob with one search keyword
     """
     if not os.path.isdir(searchroot):
-        raise ValueError('No such directory: {}'.format(searchroot))
-    Print("search for {0} in {1}".format(searchstr,searchroot), verbose=verbose)
-    f = [os.path.join(rootdir, filename)
+        raise ValueError(f'No such directory: {searchroot}')
+    
+    if '*' not in searchstr:
+        searchstr = '*'+searchstr+'*'
+
+    Print(f"search for {searchstr} in {searchroot}", verbose=verbose)
+    
+    f = [Path(rootdir).joinpath(filename)
         for rootdir, dirnames, filenames in os.walk(searchroot)
-        for filename in filenames if searchstr in filename]
+        for filename in filenames if Path(filename).match(searchstr)]
     f.sort()
     return f
 
-def recursive_glob2(searchroot='.', searchstr1='', searchstr2='', verbose=False):
+def recursive_glob2(searchroot='.', searchstr1='', searchstr2='', logic='and', verbose=False):
     """
     recursive glob with two search keywords
     """
-
     if not os.path.isdir(searchroot):
-        raise ValueError('No such directory: {}'.format(searchroot))
-    Print("search for {} and {} in {}".format(searchstr1,searchstr2,searchroot), verbose=verbose)
-    f = [os.path.join(rootdir, filename)
+        raise ValueError(f'No such directory: {searchroot}')
+    if logic == 'and':
+        logic_op = np.logical_and
+    elif logic == 'or':
+        logic_op = np.logical_or
+
+    if '*' not in searchstr1:
+        searchstr1 = '*'+searchstr1+'*'
+    if '*' not in searchstr2:
+        searchstr2 = '*'+searchstr2+'*'
+
+    Print(f"search for {searchstr1} {logic} {searchstr2} in {searchroot}", verbose=verbose)
+    
+    f = [Path(rootdir).joinpath(filename)
         for rootdir, dirnames, filenames in os.walk(searchroot)
-        for filename in filenames if (searchstr1 in filename and searchstr2 in filename)]
+        for filename in filenames if logic_op(Path(filename).match(searchstr1), Path(filename).match(searchstr2))]
     f.sort()
     return f
 
+#! Todo: add logic_op option like recursive_glob2
 def recursive_glob3(searchroot='.', searchstr_list=None, excludestr_list=None, verbose=False):
     """
     searchroot: search root dir.
@@ -70,7 +107,7 @@ def recursive_glob3(searchroot='.', searchstr_list=None, excludestr_list=None, v
     excludestr_list: not search keywords list. [optional]
     """
     if not os.path.isdir(searchroot):
-        raise ValueError('No such directory: {}'.format(searchroot))
+        raise ValueError(f'No such directory: {searchroot}')
 
     if searchstr_list is None:
         raise ValueError('Search keyword list is empty!')
@@ -80,13 +117,13 @@ def recursive_glob3(searchroot='.', searchstr_list=None, excludestr_list=None, v
     f = []
     for rootdir, dirnames, filenames in os.walk(searchroot):
         for incl in searchstr_list:
-            filenames = [fname for fname in filenames if incl in fname]
+            filenames = [fname for fname in filenames if incl in fname.lower()]
         for fname in filenames:
             f.append(os.path.join(rootdir, fname))
 
     if excludestr_list is not None:
         for ex in excludestr_list:
-            f = [fname for fname in f if ex not in fname]
+            f = [fname for fname in f if ex not in fname.lower()]
 
     f.sort()
     return f
@@ -115,11 +152,11 @@ def PrintProgressBar(iteration, total, prefix = '', suffix = '', decimals = 1, l
 
 def save_sourcecode(code_rootdir, out_dir, file_type='*.py', verbose=True):
     if not os.path.isdir(code_rootdir):
-        raise FileNotFoundError('Code root dir not exists! {}'.format(code_rootdir))
+        raise FileNotFoundError(f'Code root dir not exists! {code_rootdir}')
     Print('Backup source code under root_dir:', code_rootdir, color='red', verbose=verbose)
-    outpath = check_dir(out_dir, 'source_code_{}.tar'.format(time.strftime("%m%d_%H%M")), isFile=True)
+    outpath = check_dir(out_dir, f"source_code_{time.strftime('%m%d_%H%M')}.tar", isFile=True)
     tar_opt = 'cvf' if verbose else 'cf'
-    os.system("find {} -name '{}' | tar -{} {} -T -".format(code_rootdir, file_type, tar_opt, outpath))
+    os.system(f"find {code_rootdir} -name '{file_type}' | tar -{tar_opt} {outpath} -T -")
 
 def plot_confusion_matrix(y_true, y_pred,
                           filename, labels,
@@ -175,45 +212,3 @@ def plot_confusion_matrix(y_true, y_pred,
     fig, ax = plt.subplots(figsize=figsize)
     sns.heatmap(cm, annot=annot, fmt='', ax=ax)
     plt.savefig(filename)
-
-def volume_snapshot(data, slice_percentile=50, axis:int=0, output_fname=None, **kwargs):
-    '''
-    data: input 3d volume, must be normlized
-    slice_percentile: (int, tuple) int for single image, tuple for gif slice range
-    axis: output axis
-    output_fname: output image file name, must include ext
-    duration: (optional) set duration time for gif animation
-    loop: (optional) set loop time for gif animation
-    '''
-    from PIL import Image
-    import numpy as np
-    import collections
-
-    duration = kwargs.get('duration', 40)
-    loop     = kwargs.get('loop', 0)
-        
-    checker = lambda x: min(99, max(0,x))
-
-    slice_num = data.shape[axis]
-
-    if isinstance(slice_percentile, int):
-        slice_percentile = checker(slice_percentile)
-        slices = [int(slice_num*(slice_percentile/100))]
-    elif isinstance(slice_percentile, collections.Sequence):
-        slice_percentiles = [checker(slice_percentile[0]),checker(slice_percentile[1])]
-        slices = [int(slice_num*(slice_percentiles[0]/100)), int(slice_num*(slice_percentiles[1]/100))]
-        slices = np.arange(slices[0], slices[1])
-
-
-    img_list = []
-    for slice_idx in slices:
-        slice_data = np.take(data, slice_idx, axis=axis)
-        slice_8bit = np.multiply(slice_data, 255)
-        pil_img = Image.fromarray(slice_8bit.astype(np.uint8))
-        img_list.append(pil_img)
-
-    if '.gif' in output_fname:
-        img_list[0].save(output_fname, save_all=True, append_images=img_list[1:], duration=duration, loop=loop)
-    else:
-        [im.save(output_fname) for i,im in enumerate(img_list)]
-    
