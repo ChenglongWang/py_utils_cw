@@ -209,3 +209,25 @@ def crop3D(data, crop_size, label=None, crop_center=None, pad=(0,0,0), **kwargs)
         return __crop3D_no_pad(data, label, pad_crop_size, center_pt_func, crop_center, **kwargs)
     else:
         return __crop3D_with_pad(data, label, pad_crop_size, center_pt_func, crop_center, **kwargs)
+
+
+def get_connected_comp(data, topK=2, binary_output=True, min_th=50, verbose=False):
+    ccs, num_features = label(data, structure=generate_binary_structure(3,1))
+    component_sizes = np.bincount(ccs.ravel())
+    if len(component_sizes) > topK+1:
+        Print('{} components found!'.format(len(component_sizes)-1), color='y', verbose=verbose)
+        # Get biggest 2 components
+        biggest_indices = component_sizes[1:].argsort()[-topK:][::-1] + 1
+        
+        output = np.zeros_like(data).astype(np.int8)
+        for i, idx in enumerate(biggest_indices):
+            biggest = np.zeros(len(component_sizes)).astype(np.bool)
+            biggest[idx] = True
+            biggest_mask = biggest[ccs]
+            if np.count_nonzero(biggest_mask)>min_th:
+                output[biggest_mask] = 1 if binary_output else i+1
+        #mask = binary_dilation(output,generate_binary_structure(3,2), iterations=2)
+        #output[mask==0] = 0
+        return output
+    else:
+        return data

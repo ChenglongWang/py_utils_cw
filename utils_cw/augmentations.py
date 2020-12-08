@@ -119,12 +119,12 @@ class TransformBase(object):
     def __call__(self, **data_dict):
         raise NotImplementedError("Abstract, so implement")
 
-    def __repr__(self):
+    def __str__(self):
         ret_str = str(type(self).__name__) + "( " + ", ".join(
             [key + " = " + repr(val) for key, val in self.__dict__.items()]) + " )"
         return ret_str
 
-    def __str__(self):
+    def __repr__(self):
         return str(type(self).__name__)
 
 class ElasticTransform(TransformBase):

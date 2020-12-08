@@ -15,10 +15,10 @@ def Print(*message, color=None, on_color=None, sep=' ', end='\n', verbose=True):
             color = color_map[color] if len(color) == 1 else color
             print(colored(sep.join(map(str,message)), color=color, on_color=on_color), end=end)
 
-def check_dir(*arg, isFile=False):
+def check_dir(*arg, isFile=False, exist_ok=True):
     path = Path(*(arg[0:-1])) if isFile else Path(*arg)
     if not path.is_dir():
-        os.makedirs(path, exist_ok=True)
+        os.makedirs(path, exist_ok=exist_ok)
     return path/arg[-1] if isFile else path
 
 def get_items_from_file(filelist, format=None, sep='\n'):
@@ -26,7 +26,7 @@ def get_items_from_file(filelist, format=None, sep='\n'):
     Simple wrapper for reading items from file.
     If file is dumped by yaml or json, set `format` to `json`/`yaml`.
     """
-    if not Path.isfile(filelist):
+    if not Path(filelist).is_file():
         raise FileNotFoundError(f'No such file: {filelist}')
 
     with open(filelist, 'r') as f:
@@ -51,7 +51,7 @@ def load_h5(h5_file:str, keywords:list, transpose=None, verbose=False):
           data is not None else Print(f'{key} is None', color='r') for 
           key, data in zip(keywords, dataset) ]
 
-    if transpose is not None:
+    if transpose:
         dataset = [np.transpose(data, transpose) if data is not None
             else None for data in dataset
         ]

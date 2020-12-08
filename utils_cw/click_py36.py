@@ -19,7 +19,8 @@ def print_smi(ctx, param, value):
     if value:
         subprocess.call(["nvidia-smi"])
 
-def confirmation(ctx, param, value, output_dir=None, output_dir_ctx=None, save_code=None):
+def confirmation(ctx, param, value, output_dir=None, 
+                 output_dir_ctx=None, save_code=None, exist_ok=True):
     '''Callback for confirmation
        
     You can use functools.partial() to modify the params
@@ -47,7 +48,7 @@ def confirmation(ctx, param, value, output_dir=None, output_dir_ctx=None, save_c
             Print('No output dir specified! Do nothing!', color='y')
             return
 
-        out_dir = check_dir(out_dir)
+        out_dir = check_dir(out_dir, exist_ok=exist_ok)
         if out_dir.is_dir():
             with open( out_dir/'param.list','w') as f:
                 json.dump(ctx.params, f, indent=2, sort_keys=True, cls=PathlibEncoder)
@@ -57,6 +58,7 @@ def confirmation(ctx, param, value, output_dir=None, output_dir_ctx=None, save_c
                 save_code = cli.confirm(colored(f'Save source code of dir:\n{file_path.parent}', color='cyan'), default=True)
             if save_code:
                 save_sourcecode(file_path.parent, out_dir)
+    
 
 def output_dir_check(ctx, param, value):
     from .utils_py36 import check_dir
@@ -77,31 +79,16 @@ def output_dir_name(ctx, param, value, parent_dir=None):
     elif cli.confirm('Output dir not exists! Do you want to create new one?\n{}'.format(dir_path), default=True, abort=True):
         return check_dir(dir_path)
 
-def prompt_when(ctx, param, value, trigger):
+def prompt_when(ctx, param, value, keyword, trigger=True):
     ''' Only prompt when trigger specified keyword
 
     # Arguments
-        trigger: keyword appeared in ctx.params
+        keyword: keyword appeared in ctx.params
+        trigger: trigger prompt when keyword == trigger
     '''
-    from .utils_py36 import Print
-    if trigger in ctx.params and ctx.params[trigger]:
+    if keyword in ctx.params and ctx.params[keyword] is trigger:
         prompt_string = '\t--> ' + param.name.replace('_', ' ').capitalize()
-        Print('This option appears because you triggered:', trigger, color='y')
-        return cli.prompt(prompt_string, default=value, type=param.type, \
-                          hide_input=param.hide_input, confirmation_prompt=param.confirmation_prompt)
-    else:
-        return value
-
-def prompt_when_not(ctx, param, value, trigger):
-    ''' Only prompt when specified keyword is False
-
-    # Arguments
-        trigger: keyword appeared in ctx.params
-    '''
-    from .utils_py36 import Print
-    if trigger in ctx.params and not ctx.params[trigger]:
-        prompt_string = '\t--> ' + param.name.replace('_', ' ').capitalize()
-        Print('This option appears because you did not trigger:', trigger, color='y')
+        Print(f'This option appears because you triggered: {keyword} = {trigger}', color='y')
         return cli.prompt(prompt_string, default=value, type=param.type, \
                           hide_input=param.hide_input, confirmation_prompt=param.confirmation_prompt)
     else:
