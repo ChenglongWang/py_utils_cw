@@ -2,7 +2,7 @@ import os, sys, json, subprocess
 from termcolor import colored
 import click as cli
 from pathlib import Path
-from .utils_py36 import Print
+from .utils import Print
 
 class PathlibEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -35,7 +35,7 @@ def confirmation(ctx, param, value, output_dir=None,
         save_code: Set to True/False to enable/disable saving code.
                    Default is None, will request for confirmation every time. 
     '''
-    from .utils_py36 import save_sourcecode, check_dir
+    from .utils import save_sourcecode, check_dir
 
     if cli.confirm(colored('Continue processing with these params?\n{}'.format(
             json.dumps(ctx.params, indent=2, sort_keys=True, cls=PathlibEncoder)), color='cyan'), default=True, abort=True):
@@ -61,7 +61,7 @@ def confirmation(ctx, param, value, output_dir=None,
     
 
 def output_dir_check(ctx, param, value):
-    from .utils_py36 import check_dir
+    from .utils import check_dir
 
     if Path.is_dir(value):
         return value
@@ -70,7 +70,7 @@ def output_dir_check(ctx, param, value):
             return check_dir(value)
 
 def output_dir_name(ctx, param, value, parent_dir=None):
-    from .utils_py36 import check_dir
+    from .utils import check_dir
 
     dir_path = os.path.join(parent_dir, value) if parent_dir else value
 
