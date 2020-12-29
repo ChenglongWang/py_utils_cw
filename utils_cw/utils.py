@@ -40,7 +40,7 @@ def get_items_from_file(filelist, format='auto', sep='\n'):
 
     with filelist.open() as f:
         if format=='yaml':
-            lines = yaml.load(f)
+            lines = yaml.full_load(f)
         elif format=='json':
             lines = json.load(f)
         else:
